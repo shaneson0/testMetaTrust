@@ -46,7 +46,7 @@ contract CommissionTest is Test {
         uint256 before_shaneson_balance = address(shaneson).balance;
         uint256 before_owner_balance = address(this).balance;
         uint256 fromTokenAmount = 0.4 * 1e18;
-        uint256 commissonAmount = 0.04 * 1e18;
+        uint256 commissonAmount = 0.004 * 1e18;
         
         address fromToken = native_token;
         bytes memory dexData = hex"9871efa40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000058d15e176280000000000000000000000000000000000000000000000000000000000e2a1dc164f0000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000180000000000000003b6d0340f9bed17dea46546d56e8bc4a5a1e2e0b8628e947";
@@ -59,7 +59,7 @@ contract CommissionTest is Test {
             dexData
         );
  
-        commisson.swapWithCommisson{value: 0.44 ether}(swapRequest);
+        commisson.swapWithCommisson{value: fromTokenAmount + commissonAmount}(swapRequest);
 
         // check balance
         uint256 after_shaneson_balance = address(shaneson).balance;
@@ -110,6 +110,30 @@ contract CommissionTest is Test {
 
         assert(after_shaneson_balance == before_shaneson_balance + commissonAmount);
         assert(after_owner_balance == before_owner_balance - fromTokenAmount - commissonAmount);
+    }
+
+    function testSwapWithCommissonOnNativeTokenERROR() public {
+        uint256 fromTokenAmount = 0.4 * 1e18;
+        uint256 commissonAmount = 0.04 * 1e18;
+        address fromToken = native_token;
+        bytes memory dexData = hex"9871efa40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000058d15e176280000000000000000000000000000000000000000000000000000000000e2a1dc164f0000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000180000000000000003b6d0340f9bed17dea46546d56e8bc4a5a1e2e0b8628e947";
+
+        Commission.SwapRequest memory swapRequest = Commission.SwapRequest (
+            fromToken,
+            fromTokenAmount,
+            commissonAmount,
+            shaneson,
+            dexData
+        );
+
+        vm.expectRevert(bytes("commisson rate limit is 0.03"));
+        commisson.swapWithCommisson{value: 0.44 ether}(swapRequest);
+
+    }
+
+    function testAdminFunctions() public {
+        commisson.setCommissoRate(1000);
+        commisson.setProtocolAdmin(shaneson);
     }
 
 }
